@@ -34,4 +34,84 @@ CU 解碼儲存在指令暫存器中的指令，決定需要進行的操作及�
 - [ChatGPT-Brief Summary](https://chatgpt.com/c/1f0a5816-7274-4193-b5cb-d51fee08e5a1)
 - [數據匯排流(Data Bus)](https://zh.wikipedia.org/wiki/%E6%80%BB%E7%BA%BF)
 
-如果有一段古早的程式碼，可能長這樣
+## 字串及日期型別可能的底層實作
+
+### String
+
+字串也是一連串的記憶體位置，裡面包含類似整數的字元代碼
+e.g.
+
+```cSharp
+string name = "Jill"
+```
+
+```cSharp
+['J', 'i', 'l', 'l']
+```
+
+7-bit ASCII Code
+
+```cSharp
+[74, 105, 108, 108 ]
+```
+
+### DateTime
+
+早期C#並沒有DateTime型別，而是在.NET Framework 1.0版引入的
+
+如果有一段古早的程式碼要表達日期，需要使用int型別
+e.g.
+
+```cSharp
+int birthdate = 20160229
+```
+
+如果要做日期的運算，又是更為麻煩，以計算明年的生日為例
+
+```cSharp
+int birthdate = 20160229
+int year = birthdate / 10000;
+int month = (birthdate % 10000) / 100;
+int day = birthdate % 100;
+
+int nextYear = year + 9;
+
+ bool isLeapYear = (nextYear % 4 == 0 && nextYear % 100 != 0) || (nextYear % 400 == 0);
+
+if (month == 2 && day == 29 && !isLeapYear)
+{
+    day = 28;
+}
+
+int birthDayInNextYear = nextYear * 10000 + month * 100 + day;
+
+```
+
+---
+
+## Procedural Programming
+
+Program
+Libraries
+Temporal coupling
+
+initialize(Similar to constructor)
+
+problem:
+
+## Modular Programming
+
+要指定使用的是哪個Module的Procedural
+
+main
+
+problem: 在當前的program share 同一個Modual，如果任何一個caller需要不同初始化資訊來調用該
+procedure，他們會覆蓋之前的Data，因為其放置在Shared Memory block
+
+Soultion: 指派一個新的變數(new memory block)來存放初始化出來的值，任何調用這個變數的Consumer，需要去記住這個變數的記憶體位置
+
+這個行為形成了物件導向世界裡的**建構函數(Constructor)**，建構了一個**物件(Object)**
+
+而Procedures改為傳入Object作為參數，使可以對該記憶體區塊做操作，使不同的caller，能用不同的數據來調用相同的Procedure，達到真正意義上的分離
+
+Object解決了Module共享記憶體的問題，使可以創建相同結構，但獨立的數據副本，即為所謂的**實例(instance)**
