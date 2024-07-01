@@ -91,15 +91,25 @@ int birthDayInNextYear = nextYear * 10000 + month * 100 + day;
 
 ## Procedural Programming
 
-Program
-Libraries
-Temporal coupling
+> Problem Difinition
+如果每次計算明年的生日，都要執行上面那一段指令，會很冗餘
+
+一連串的指令概括為一個代稱**Procedure**，並將這段指令放在Program裡，提供一個程式的進入點(Entry Point)，帶來了隱藏複雜性跟具複用性的好處
+
+```csharp
+program
+{
+   GetDateInNextYear(int now);
+}
+```
+
+但仍存在一些問題，例如Temporal coupling
 
 initialize(Similar to constructor)
 
-problem:
-
 ## Modular Programming
+
+> Problem Difinition
 
 要指定使用的是哪個Module的Procedural
 
