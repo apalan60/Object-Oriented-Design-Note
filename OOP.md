@@ -91,9 +91,10 @@ int birthDayInNextYear = nextYear * 10000 + month * 100 + day;
 
 ## Procedural Programming
 
-> Problem Difinition
+**Problem Difinition**
 如果每次計算明年的生日，都要執行上面那一段指令，會很冗餘
 
+**Solution**
 一連串的指令概括為一個代稱**Procedure**，並將這段指令放在Program裡，提供一個程式的進入點(Entry Point)，帶來了隱藏複雜性跟具複用性的好處
 
 ```csharp
@@ -109,19 +110,57 @@ initialize(Similar to constructor)
 
 ## Modular Programming
 
-> Problem Difinition
-
-要指定使用的是哪個Module的Procedural
-
-main
-
-problem: 在當前的program share 同一個Modual，如果任何一個caller需要不同初始化資訊來調用該
+**Problem Difinition**
+在當前的program share 同一個Modual，如果任何一個caller需要不同初始化資訊來調用該
 procedure，他們會覆蓋之前的Data，因為其放置在Shared Memory block
 
-Soultion: 指派一個新的變數(new memory block)來存放初始化出來的值，任何調用這個變數的Consumer，需要去記住這個變數的記憶體位置
+**Soultion**
+指派一個新的變數(new memory block)來存放初始化出來的值，任何調用這個變數的Consumer，需要去記住這個變數的記憶體位置
 
 這個行為形成了物件導向世界裡的**建構函數(Constructor)**，建構了一個**物件(Object)**
 
 而Procedures改為傳入Object作為參數，使可以對該記憶體區塊做操作，使不同的caller，能用不同的數據來調用相同的Procedure，達到真正意義上的分離
 
 Object解決了Module共享記憶體的問題，使可以創建相同結構，但獨立的數據副本，即為所謂的**實例(instance)**
+
+```cSharp
+module SchoolCalender
+ int schoolMonth
+ int schoolday
+ int minAge
+
+ initilize(int month, int day, int schoolMonth)
+    schoolMonth = month
+    schoolDay = day
+    minAge = age
+
+```
+
+## Object Oriented Programming
+
+隨著物件的出現，以上的型式便衍生了新的說法: class, field, function，
+當宣告一個class，並有一個int型別的age，代表著物件被實例化時，會被分配4 bytes來儲存，這就是其中field的內涵。initialize()則被轉化為Constructor, procedure被轉化為function
+
+### 記憶體分配
+
+```CSharp
+var pen = new Pen(color);
+pen.Write();
+```
+
+此時pen已佔用了記憶體，若長期放置，在使用完後不被刪除，則會造成*Memory Leak*
+在C++裡，可以手動釋放記憶體(*Memory Deallocation*)
+
+```C++
+delete pen
+```
+
+手動釋放記憶體存在一些可能的人為錯誤，包含:
+
+1. 懸空指標(*Dangling pointer*) : 在仍有代碼有pointer指向某物件時，但他卻被刪除，指向的記憶體位址是空的。
+
+2. Reading Garbage: 在上述情況，原記憶體區段被賦予了新的值，導致指向非預期的目標
+
+3. Memory leak: 物件不使用了卻沒刪，導致記憶體占用問題
+
+在C#裡，則會統一透過**Garbage Collection**管理記憶體，由系統判斷，在需要時調用，不需要時釋放
