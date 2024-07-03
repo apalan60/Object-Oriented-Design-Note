@@ -114,8 +114,10 @@ initialize(Similar to constructor)
 在當前的program share 同一個Modual，如果任何一個caller需要不同初始化資訊來調用該
 procedure，他們會覆蓋之前的Data，因為其放置在Shared Memory block
 
+可以理解為在操作static data value，這些value在procedures之間共享
+
 **Soultion**
-指派一個新的變數(new memory block)來存放初始化出來的值，任何調用這個變數的Consumer，需要去記住這個變數的記憶體位置
+指派一個新的變數(new memory block)來存放初始化出來的值，任何調用這個變數的Consumer，需要去記住這個變數的記憶體位置(reference to data instance)，方法的調用也默認採用'this'的參照，使可以使用field
 
 這個行為形成了物件導向世界裡的**建構函數(Constructor)**，建構了一個**物件(Object)**
 
@@ -164,3 +166,52 @@ delete pen
 3. Memory leak: 物件不使用了卻沒刪，導致記憶體占用問題
 
 在C#裡，則會統一透過**Garbage Collection**管理記憶體，由系統判斷，在需要時調用，不需要時釋放
+
+### C# Language syntax
+
+#### Method
+
+##### 定義
+
+- 執行某些計算，**改變物件**的狀態或值
+- 根據既有的data，**產生某些結果**並回傳
+
+>*最好不要讓兩個行為塞在同一個Method，很容易產生很多奇怪的Bug*
+
+##### Functional language v.s. Object Oriented language
+
+前者會自動使用方法生成的最後一個值作為傳回值(Implict return value)，物件導向語言則不允許，需要有明確傳回值，除了Void，但Void也不作為一個型別
+
+#### Access Modifiers
+
+用於定義類別裡的成員，能否被更改或調用
+
+#### Program Entry Point
+
+透過向Operation System(OS)提供指令，OS接收到指令後，會去尋找程式的進入點並執行(run)Program e.g. ```app.exe```
+
+執行時也允許帶一些參數 e.g. ```app.exe 1 2 3```
+而這些參數也需要一些記憶體區塊來存取，所以需要string[] args
+
+```cSharp
+class Program
+{
+    static void Main(string[] args)
+    {
+        //do something
+    }
+}
+```
+
+##### 以物件的角度來看Program
+
+應該要期許OS實例化一個Program，調用其中的Main function, 並傳入參數args
+
+但**OS無法支援對物件的操作**，所以實際上Program在OS裡還是被視為一個有單一進入點(Main function)的Code block，在Command輸入的參數也被傳入進入點，並執行這段Procedure
+
+但這樣子誰來實例化Program物件以執行Main()?
+=> 沒有辦法實例化，所以需要**加修飾詞static，以代表這段function不屬於任何物件**
+
+結論: Main()不是任何一個物件的function，在function裡沒有任何隱含的'this' Reference
+
+ref: [Udemy-Understanding Program Entry Point](https://www.udemy.com/course/beginning-oop-with-csharp/learn/lecture/28443464#notes) 講得蠻好的，建議重看
