@@ -215,3 +215,91 @@ class Program
 結論: Main()不是任何一個物件的function，在function裡沒有任何隱含的'this' Reference
 
 ref: [Udemy-Understanding Program Entry Point](https://www.udemy.com/course/beginning-oop-with-csharp/learn/lecture/28443464#notes) 講得蠻好的，建議重看
+
+### Polymorphic Classes
+
+#### 替代原則(Object Substitution Principle)
+
+透過繼承(inherit)，基底(Base)物件可以被派生(Derived)物件替代
+
+派生物件可以使用基底物件的所有屬性、欄位、方法
+
+### Polymorphic Execution
+
+已知Derived Object 可以使用 Base Object 的方法，但如果有一樣命名的方法，該執行哪一個?
+
+e.g.
+我有一份健身菜單，基本的行為Exercise()是執行跑步
+
+健身菜單衍生出了三種不同的類型，分別為胸, 背, 腿的菜單
+
+此時會期望如果new出來的菜單是胸，執行的Exercise()可以自動幫我換為胸推
+
+```cSharp
+namespace ObjectOrientedDesign
+{
+    public class WorkoutPlan
+    {
+        public void Exercise()
+        {
+            Console.WriteLine("run");
+        }
+    }
+
+    public class Chest : WorkoutPlan
+    {
+        public void Exercise()
+        {
+            Console.WriteLine("Bench Press");
+        }
+    }
+    
+    public class Back : WorkoutPlan
+    {
+        public void Exercise()
+        {
+            Console.WriteLine("Pull Ups");
+        }
+    }
+    
+    public class Leg : WorkoutPlan
+    {
+        public void Exercise()
+        {
+            Console.WriteLine("Squats");
+        }
+    }
+
+    internal class Program
+    {
+        public static void Main(string[] args)
+        {
+            WorkoutPlan chestPlan = new Chest();
+            WorkoutPlan backPlan = new Back();
+            WorkoutPlan legPlan = new Leg();
+            
+            chestPlan.Exercise();
+            backPlan.Exercise();
+            legPlan.Exercise();
+        }
+    }
+}
+
+```
+
+此時執行程式碼會怎樣?
+
+```Bash
+> dotnet run
+# C:\Users\User\RiderProjects\Lab\ObjectOrientedDesign\ObjectOrientedDesign\Program.cs(13,21): warning CS0108: 'Chest.Exercise()' 會隱藏繼承的成員 'WorkoutPlan.Exercise()'。若本意即為要隱藏，請使用 new 關鍵字。 [C:\Users\User\RiderProjects\Lab\ObjectOrientedDesign
+
+#\ObjectOrientedDesign\ObjectOrientedDesign.csproj]C:\Users\User\RiderProjects\Lab\ObjectOrientedDesign\ObjectOrientedDesign\Program.cs(21,21): warning CS0108: 'Back.Exercise()' 會隱藏繼承的成員 'WorkoutPlan.Exercise()'。若本意即為要隱藏，請使用 new 關鍵字。 [C:\Users\User\RiderProjects\Lab\ObjectOrientedDesign\ObjectOrientedDesign\ObjectOrientedDesign.csproj]
+
+#C:\Users\User\RiderProjects\Lab\ObjectOrientedDesign\ObjectOrientedDesign\Program.cs(29,21): warning CS0108: 'Leg.Exercise()' 會隱藏繼承的成員 'WorkoutPlan.Exercise()'。若本意即為要隱藏，請使用 new 關鍵字。 [C:\Users\User\RiderProjects\Lab\ObjectOrientedDesign\ObjectOrientedDesign\ObjectOrientedDesign.csproj]
+run
+run
+run
+
+```
+
+會連續3次都是跑步
