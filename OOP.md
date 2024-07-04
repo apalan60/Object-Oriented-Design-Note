@@ -224,8 +224,20 @@ ref: [Udemy-Understanding Program Entry Point](https://www.udemy.com/course/begi
 
 派生物件可以使用基底物件的所有屬性、欄位、方法
 
-### Polymorphic Execution
+### Polymorphic Execution(Dynamic Dispatch)
 
+#### Definintion
+
+- vTable的Funtion在編譯時，不會實際對到某個記憶體區塊
+- 編譯器會分配vTable給每個class
+- 物件被實例化時，會分配pointer(vTable pointer, a memory address)到object的layout中
+
+>*ref*:講得蠻好的，建議重看
+>
+> 1. [Virtual functiom](https://www.udemy.com/course/beginning-oop-with-csharp/learn/lecture/28506609#overview)
+> 2. [Implementing Polymorphic Method Calls](https://www.udemy.com/course/beginning-oop-with-csharp/learn/lecture/28506611#overview
+)
+---
 已知Derived Object 可以使用 Base Object 的方法，但如果有一樣命名的方法，該執行哪一個?
 
 e.g.
@@ -308,11 +320,15 @@ run
 
 在修正之前，先談談object layout & vTable
 
-***vTable***: 虛擬表，Compiler 會自動為每個物件建立，是記憶體裡指向function的指標陣列，每個指標為vptr（虛指針）
+##### vTable
+
+Vitural method table(虛擬表)，Compiler 會自動為每個物件建立，並且**會被繼承**，是記憶體裡指向function的指標陣列，每個指標為vptr（虛指針）
 
 function pointer的概念在電腦發明的初期就已經存在，用於指向某段方法的記憶體位置，並跳過去執行
 
-***object layout***: runTime時，由Complier決定instance要在記憶體分配什麼樣的結構、儲存方式、順序。 包含了物件裡的所有成員，包含數據(e.g. property, field)及隱含的成員(e.g. vTable, vptr)
+##### object layout
+
+runTime時，由Complier決定instance要在記憶體分配什麼樣的結構、儲存方式、順序。 包含了物件裡的所有成員，包含數據(e.g. property, field)及隱含的成員(e.g. vTable, vptr)
 
 ```mermaid
 classDiagram
@@ -334,15 +350,22 @@ direction LR
 從剛範例的基底類別WorkoutPlan來看，起來可能會長這樣
 
 ```cSharp
-VTable  workoutfunction =  //added by compiler in run time
+//the method to use functions in vTable may looks like:
+call(instance, index, args )
 {
-    //vptr : function
-    0 : WorkoutPlan.Exercise() 
-    1 : WorkoutPlan.DoSometing()
+    VTable vTable = instance.functions;
+    MemoryAddress function = vTable[index];
+    return function(args);
 }
 
 public class WorkoutPlan
     {
+        //added by compiler in run time
+        VTable  workoutfunction =  
+        0 : WorkoutPlan.Exercise() //vptr : function
+        1 : WorkoutPlan.DoSometing()
+    
+
         function[] = workoutfunction()  //added by compiler in run time
 
         public void Exercise()
@@ -353,3 +376,165 @@ public class WorkoutPlan
         public void DoSomething(){};
     }
 ```
+
+#### Base
+
+vTable也會繼承建構函數，C#提供一種語法用來代表在derived object初始化了繼承來的欄位: *Base*
+
+```cSharp
+public class WorkoutPlan
+{
+    private int _duration;
+
+    public WorkoutPlan(int duration)
+    {
+        _duration = duration;
+    }
+}
+
+public class Chest : WorkoutPlan
+{
+    public Chest(int duration) : base(duration)
+    {
+    }
+}
+
+```
+
+#### Overide
+
+derived object 可以覆蓋掉Base Object的function
+把vptr原本指向base物件方法的記憶體位址，改為指向derived object的方法，即為Overide
+
+VTable  workoutfunction
+{
+    ~~~0 : WorkoutPlanFunction[0]~~~
+    0 : Chest.Exercise  
+}
+
+```cSharp
+
+Chest chest = new WorkOutPlan();
+chest.Exercise()  
+
+//在runtime，會看起來像是:
+Call(this, 0, args)  
+```
+
+如果Override WorkOutPlan.Exercise()  這個index最後會指向Chest class的Exercise()實作
+
+會選擇哪個function來實作(選擇哪個記憶體區塊)，是**在run time處理**的
+
+#### Implement
+
+試著回來修改最一開始的範例，把所有function都放入vTable並於run time計算是耗費效能的
+
+所以C# 設計為base object有以修飾詞標示為**virtual**的方法，才會納入vTable，並動態解析
+
+其他的function則維持靜態(static)解析，在編譯(Compile)時就解析
+
+derived object 則必須加上overide，才會真的改為指向自己的實作，不然會出現上面的warning
+
+```warning CS0108: 'Back.Exercise()' 會隱藏繼承的成員 'WorkoutPlan.Exercise()'。若本意即為要隱藏，請使用 new 關鍵字。```
+
+修改後的程式碼如下，保留Leg沒有Overide
+
+```cSharp
+namespace ObjectOrientedDesign;
+
+public class WorkoutPlan
+{
+    private int _duration;
+
+    protected WorkoutPlan(int duration)
+    {
+        _duration = duration;
+    }
+
+    public virtual void Exercise()
+    {
+        Console.WriteLine("run");
+    }
+}
+
+public class Chest : WorkoutPlan
+{
+    public override void Exercise()
+    {
+        Console.WriteLine("Bench Press");
+    }
+
+    public Chest(int duration) : base(duration)
+    {
+    }
+}
+    
+public class Back : WorkoutPlan
+{
+    public override void Exercise()
+    {
+        Console.WriteLine("Pull Ups");
+    }
+
+    public Back(int duration) : base(duration)
+    {
+    }
+}
+    
+public class Leg : WorkoutPlan
+{
+    public void Exercise()
+    {
+        Console.WriteLine("Squats");
+    }
+
+    public Leg(int duration) : base(duration)
+    {
+    }
+}
+
+internal class Program
+{
+    public static void Main(string[] args)
+    {
+        WorkoutPlan chestPlan = new Chest(10);
+        WorkoutPlan backPlan = new Back(20);
+        WorkoutPlan legPlan = new Leg(30);
+            
+        chestPlan.Exercise();
+        backPlan.Exercise();
+        legPlan.Exercise();
+    }
+}
+
+```
+
+Output
+
+```bash
+> dotnet run
+#C:\Users\User\RiderProjects\Lab\ObjectOrientedDesign\ObjectOrientedDesign\Program.cs(44,17): warning CS0114: 'Leg.Exercise()' 會隱藏繼承的成員 'WorkoutPlan.Exercise()'。若要讓目前的成員覆寫該實作，請加入 override 關鍵字; 否則請加入 new 關鍵字。 [C:\Users\User\RiderProjects\Lab\ObjectOrientedDesign\ObjectOrientedDesign\ObjectOrientedDesign.csproj]
+Bench Press
+Pull Ups
+run  ##Unchanged
+```
+
+#### Summary: Polymophism(多態性)是什麼
+
+一個物件可以以多種樣貌呈現，實作上透過繼承來實現，不透過一些在基底類別的共同屬性，以及衍生類別自己的屬性
+
+來呈現出真實世界裡，相同類別的東西，有點一樣，又有些不一樣的現象
+
+而這些物件又會有相似的行為，但實際操作起來，又有些不一樣，例如範例裡的物件，健身菜單
+
+各種不同的菜單都要執行Excercise()的行為，但實際怎麼操作又有些不同
+
+這種現象被使用Vtable來在計算機的世界定義
+
+整個物件導向設計都圍繞著
+
+1. **'this' reference**
+
+2. **Virtual method table**
+
+=> 現在是誰在執行行為? 有沒有動態執行方式?
