@@ -302,4 +302,54 @@ run
 
 ```
 
-會連續3次都是跑步
+會連續3次都是跑步，並不符合預期
+
+#### Virtual function
+
+在修正之前，先談談object layout & vTable
+
+***vTable***: 虛擬表，Compiler 會自動為每個物件建立，是記憶體裡指向function的指標陣列，每個指標為vptr（虛指針）
+
+function pointer的概念在電腦發明的初期就已經存在，用於指向某段方法的記憶體位置，並跳過去執行
+
+***object layout***: runTime時，由Complier決定instance要在記憶體分配什麼樣的結構、儲存方式、順序。 包含了物件裡的所有成員，包含數據(e.g. property, field)及隱含的成員(e.g. vTable, vptr)
+
+```mermaid
+classDiagram
+direction LR
+    class ObjectLayout {
+        +vtable
+        +field1
+        +field2
+        +field3
+        +...
+    }
+    class ConcreteVTable {
+        +function1
+        +function2
+    }
+    ObjectLayout --> ConcreteVTable
+```
+
+從剛範例的基底類別WorkoutPlan來看，起來可能會長這樣
+
+```cSharp
+VTable  workoutfunction =  //added by compiler in run time
+{
+    //vptr : function
+    0 : WorkoutPlan.Exercise() 
+    1 : WorkoutPlan.DoSometing()
+}
+
+public class WorkoutPlan
+    {
+        function[] = workoutfunction()  //added by compiler in run time
+
+        public void Exercise()
+        {
+            Console.WriteLine("run");
+        }
+
+        public void DoSomething(){};
+    }
+```
