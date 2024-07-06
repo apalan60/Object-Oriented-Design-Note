@@ -538,3 +538,114 @@ run  ##Unchanged
 2. **Virtual method table**
 
 => 現在是誰在執行行為? 有沒有動態執行方式?
+
+## Introduction of Project and Solution
+
+### .NET Assembly(組態)
+
+Solution裡可以有許多Projects，每個project可以被編譯並建置到一個項目中，稱為Assembly
+
+Assembly可以透過IDE裡的Build被建置，可以直接對project建置，或對整個Solution建置
+
+```powershell
+0>------- Started building project: ObjectOrientedDesign
+ObjectOrientedDesign -> C:\Users\User\RiderProjects\Lab\ObjectOrientedDesign\ObjectOrientedDesign\bin\Debug\net8.0\ObjectOrientedDesign.dll
+
+0>------- Finished building project: ObjectOrientedDesign. Succeeded: True. Errors: 0. Warnings: 0
+
+Build completed in 00:00:01.045
+
+```
+
+可以看到建置後產生了一個路徑，指向ObjectOrientedDesign.dll
+![dll](image.png)
+
+### Dynamic link library (DLL)
+
+建置 .NET project後產生的Assembly
+
+build 整個 solution，就會為底下的每個project建置DLL
+
+Compiler會檢查程式碼是否有更改，若都沒有，就會採用之前的DLL，以節省資源
+
+### 專案的資料夾裡有什麼
+
+![Project fils](image-1.png)
+
+#### .csropj
+
+CSharp project files
+
+以 XML 格式定義專案使用的SDK、參考的套件、編譯選項(C# 的語言版本、是否啟用代碼分析、警告級別等)、定義不同的組態(e.g. Debug / Release分別的設定)
+
+```XML
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+</Project>
+
+```
+
+## .cs
+
+撰寫的原始碼，此處看到的是建專案時被建立出來的program class
+
+## bin folder
+
+存放binaries(二進位)資料
+
+裡面依序包含以下資料夾
+
+### Debug folder
+
+存放Configuration資訊
+
+#### .NET 8.0 Folder
+
+每個project能以不同的.NET版本部屬，Complier會根據版本為資料夾命名
+
+![.NET 8.0 Files](image-4.png)
+
+資料夾裡存放所有建置需要的內容，如果想要把應用程式部屬到另外一台電腦，**需要複製所有內容**
+
+- json files : 跟Configuration有關
+
+- pdb file : 用於Debug
+
+- .exe : 用於執行程式 .NET Core是跨平台架構(Window, Linux, MacOS)皆可運行建置產生的組態。 這裡看到的.exe是給windows用的
+
+打開cmd可以發現可以直接執行這份.exe
+
+```> ObjectOrientedDesign.exe```
+
+也可以直接執行組態，但要給他 .NET 的command line tool
+```>dotnet ObjectOrientedDesign.dll```
+
+```cmd
+Microsoft Windows [版本 10.0.22631.3737]
+(c) Microsoft Corporation. 著作權所有，並保留一切權利。
+
+C:\Users\User\RiderProjects\Lab\ObjectOrientedDesign\ObjectOrientedDesign\bin\Debug\net8.0>ObjectOrientedDesign.exe
+Bench Press
+Pull Ups
+Squats
+
+C:\Users\User\RiderProjects\Lab\ObjectOrientedDesign\ObjectOrientedDesign\bin\Debug\net8.0>ObjectOrientedDesign.dll
+
+未處理的例外狀況: System.IO.FileNotFoundException: 無法載入檔案或組件 'System.Runtime, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a' 或其相依性的其中之一。 系統找不到指定的檔案。
+
+C:\Users\User\RiderProjects\Lab\ObjectOrientedDesign\ObjectOrientedDesign\bin\Debug\net8.0>dotnet ObjectOrientedDesign.dll
+Bench Press
+Pull Ups
+Squats
+```
