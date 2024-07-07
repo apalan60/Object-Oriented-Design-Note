@@ -596,21 +596,21 @@ CSharp project files
 
 ```
 
-## .cs
+#### .cs
 
 撰寫的原始碼，此處看到的是建專案時被建立出來的program class
 
-## bin folder
+#### bin folder
 
 存放binaries(二進位)資料
 
 裡面依序包含以下資料夾
 
-### Debug folder
+#### Debug folder
 
 存放Configuration資訊
 
-#### .NET 8.0 Folder
+##### .NET 8.0 Folder
 
 每個project能以不同的.NET版本部屬，Complier會根據版本為資料夾命名
 
@@ -649,3 +649,53 @@ Bench Press
 Pull Ups
 Squats
 ```
+
+### NameSpce
+
+以```Console.WriteLine("run")```這行為例，Compiler執行到這行時，看到命名空間是'Console'並往上找驗證，找到的命名空間為ObjectOrientedDesign，但這個命名空間裡並沒有Console這個class，並不符合
+
+接著就會再往上檢查using的namespace裡，有沒有有包含Console class的，此時會發現System符合，並成功編譯
+
+```csharp
+using System;
+
+namespace ObjectOrientedDesign;
+
+public class WorkoutPlan
+{
+    private int _duration;
+
+    public virtual void Exercise()
+    {
+        Console.WriteLine("run");
+    }
+}
+
+
+namespace System
+{
+    public static class Console
+    {
+        //...
+    }
+}
+```
+
+## Design a Class
+
+### Static
+
+- only conatain static members
+- can not conatin instance-level fields or methods
+- **static methods** are equal to procedure，it's not contain any OOP concept
+
+*Note:* 雖然在OOP不傾向使用static ， 但functional programing是會使用的
+
+### Encapsulation(封裝)
+
+被宣告為private的field，除了所屬的class以外，皆無法訪問
+
+外部調用這個class時，是無法看到這些欄位的內容的
+
+- 增加這種限制有什麼好處?
+讓其他的class無法依賴這個欄位，日後要修改這個欄位也會變得容易，而不會影響到調用方
