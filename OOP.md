@@ -326,9 +326,9 @@ Vitural method table(虛擬表)，Compiler 會自動為每個物件建立，並�
 
 function pointer的概念在電腦發明的初期就已經存在，用於指向某段方法的記憶體位置，並跳過去執行
 
-##### object layout
+##### Object layout
 
-runTime時，由Complier決定instance要在記憶體分配什麼樣的結構、儲存方式、順序。 包含了物件裡的所有成員，包含數據(e.g. property, field)及隱含的成員(e.g. vTable, vptr)
+Runtime時，由Complier決定instance要在記憶體分配什麼樣的結構、儲存方式、順序。 包含了物件裡的所有成員，包含數據(e.g. property, field)及隱含的成員(e.g. vTable, vptr)
 
 ```mermaid
 classDiagram
@@ -699,3 +699,98 @@ namespace System
 
 - 增加這種限制有什麼好處?
 讓其他的class無法依賴這個欄位，日後要修改這個欄位也會變得容易，而不會影響到調用方
+
+### New 一個 Object 如何分配記憶體
+
+變數在記憶體的儲存方式有兩種: Reference types, value types，以下分別介紹
+
+```csharp
+namespace Calendars;
+
+internal class Date(int year, int month, int day)
+{
+    public int Year { get; set; } = year; 
+    private int _month = month;
+    private int _day = day;
+}
+```
+
+```csharp
+namespace Calendars;
+
+internal class Child(string? name, Date? birthday)
+{
+    private string? _name = name;
+    public Date? Birthday { get; set; }
+}
+```
+
+```csharp
+int year = 2016;
+var date = new Date(year, 1, 1);
+var child = new Child("Jill", date);
+```
+
+#### Reference Type
+
+包含: String, Array, Class
+這種類型的變數會儲存對數據實際記憶體位址的參考，而數據本身通常以heap被動態分配在記憶體區塊
+
+**String**並不是直接以值儲存的原因在於它在編譯時，並沒有固定長度，固定的只有這個記憶體位址的所占容量，64 bit的電腦會使用8個bytes / 32 bits 則是4個bytes
+
+用以上程式碼為例，變數child在記憶體分配的object layout裡，並不是直接儲存了某個物件Child的某種值在記憶體裡，而是字串"Jill"會先被分配到某段分別儲存'J', 'i', 'l', 'l'的memory block，這個memory block的位址再被複製到child物件，讓child指向他
+
+並且Child也指向另一個物件Date的記憶體位址
+
+#### Value Type
+
+包含: int, float, char, bool, enum, 以及所有的結構（struct）e.g. DateTime
+
+當這些型別的變數被宣告時，記憶體會直接分配一個空間儲存這些值
+
+並且當其他變數引用值型別的變數時，會直接**複製值**，而非像Reference type是儲存該記憶體位址
+
+#### Reference Type v.s. Value Type
+
+| Feature                   | Reference Types                      | Value Types                            |
+|---------------------------|--------------------------------------|----------------------------------------|
+| **Storage**               | Stored on the heap.                  | Stored on the stack.                   |
+| **Access**                | Accessed via a reference.            | Accessed directly by their value.      |
+| **Memory Allocation**     | Dynamically allocated during runtime.| Allocated at compile time.             |
+| **Life Cycle**            | Managed by garbage collector.        | Managed by the scope they are defined in. |
+| **Copying Behavior**      | Copies the reference, not the object.| Copies the actual data/value.          |
+| **Example Types**         | `string`, `class`, `array`            | `int`, `float`, `struct`, `enum`       |
+| **Modification Impact**   | Changes affect all references.       | Changes affect only the instance modified. |
+| **Performance**           | Generally slower due to indirection. | Generally faster due to direct access. |
+| **Use Case**              | Ideal for large data structures.     | Best for small and immutable data.     |
+
+#### Sample and explaination
+
+用以下程式碼來說明
+
+```csharp
+using Calendars;
+
+int year = 2016;
+Date date = new Date(year, 1, 1);
+Child child = new Child("Jill", date);
+
+year = 2017;
+Console.WriteLine(date.Year); //2017
+
+date.Year = 1999;
+
+Console.WriteLine(child.Birthday.Year); //1999
+
+```
+
+- date.Year會輸出2017而不是2016，因為編譯時，2016這個值就已經被複製到另一個記憶體區塊A，並讓date變數的object layout(區塊X)指向這個區塊A
+區塊A裡的值是2016，所以輸出是2016
+
+- child變數指向的是記憶體區塊B，存放字串Jill的位址，和記憶體區塊C，存放Date的位址(區塊X)，這個位址和變數date指向的是一樣的
+
+而後，區塊A的值被改為1999
+
+區塊C(child)指向區塊X(date)，區塊X指向區塊A(date.year)
+
+最後得到值 1999，因為他的的值都是參考來的
