@@ -892,3 +892,33 @@ public Date GetBeginning(Child child) =>
             .GetFirstOccurance(_schoolStart);
 
 ```
+
+## Selector
+
+對比於pipeline，選擇一種function來執行，常與三元運算符等pattern matching搭配
+
+two possible result
+
+```csharp
+    private Date FirstValidDate(int year, YearDate day)
+    {
+        if (_day.IsLeap() && !year.IsLeap())
+        {
+            return new Date(year, day.AddDays(1));
+        }
+        return new Date(year, day);
+    }
+```
+
+> 將複雜的實作拆解為pipeline或selector，最後再加以組合，會使它們變得簡單
+
+## Recursion
+
+### Activation frame
+
+- 又稱為Activation record, stack frame
+- 是在function被調用時，儲存的資料結構
+- 結構為後進先出(LIFO)
+- 在Call Stack上動態管理，儲存了參數、局部變數(local variables)、傳回的地址(return address)
+
+> **每次遞迴都會產生一個Activation frame，並推入call stack，再依照LIFO的特性，逐一回到最開始的傳回位址
