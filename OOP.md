@@ -794,3 +794,101 @@ Console.WriteLine(child.Birthday.Year); //1999
 區塊C(child)指向區塊X(date)，區塊X指向區塊A(date.year)
 
 最後得到值 1999，因為他的的值都是參考來的
+
+## Design a vitural method
+
+- 每個class都預設繼承Object
+
+- 一個class最多繼承一個class，有自訂的繼承時則移除預設繼承object的行為
+
+- 繼承可以形成一個鏈，接連繼承下去 z繼承y, y 繼承x , x繼承object
+
+> 為什麼要統一繼承object?
+提供了一些每個物件可能常用的方法，例如.ToString()
+不然每次要toString()，
+要先```System system = new System```, ```system.ToString()```
+
+- 在override的function實作裡，要調用base class的function, 要加**base**，用以區格，並快速尋找vTable e.g. ```base.ToString()```
+
+- 若以數字值作為字串傳回值，會自動調用ToString
+
+## "Tell, Don't Ask" principle
+
+1. Disclose own data
+
+2. Tell co-object what to do, don't ask private data directly
+
+3. let object use its private data according to your request
+
+OOP會避免procedural design, 把所有程序一長串的寫完。 而是將行為分配給合適的物件
+真實情況下完成一個行為往往需要多個物件協作，此時，應該要把其中幾項物件的狀態委派(delegate)給其他物件裡的方法
+
+- 當設計上善用封裝，private field也會驅使自己在需要時將狀態傳遞給其他物件，而非全部設為public隨意調用導致行為沒有被放置在應該存在的類別，導致耦合
+
+>物件導向設計方法的行為是**給予狀態並取得服務**
+>
+> procedure則相反，是取得狀態來自行執行服務，會導致物件之間緊密耦合，因為調用方被注入了其他物件的結構
+> 兩者差異在於資料的流動，OOP從this object傳遞私有狀態至協作的物件，保持數據的封裝性。 相反地，**要求協作物件給予資料，往往是設計上的anti-pattern**
+
+```mermaid
+
+
+graph LR;
+
+    ObjectA-->|Tell the state|ObjectB;
+
+    ObjectB-->|receive the service |ObjectA;
+
+```
+
+![Tell,Don't ask sample](image-5.png)
+
+## Chaining method calls
+
+當方法適當的拋送職責給不同的物件後，這些function會被連續的呼叫已完成某個行為，可稱為**call chain** / **pipeline**
+
+這些方法具有組合性，可以聚集他們已完成來完成某個複雜功能
+
+```csharp
+    public Date GetBeginning(Child child)
+    {
+        Date oldEnough = child.GateDateByAge(minAge);
+
+        Date cutoff = oldEnough.GetFirstOccurance(cutOff);
+        
+        return cutoff.GetFirstOccurance(_schoolStart);
+    }
+```
+
+chain call可精簡成以下寫法
+
+```csharp
+    public Date GetBeginning(Child child)
+    {
+        return child.GateDateByAge(minAge)
+            .GetFirstOccurance(cutOff)
+            .GetFirstOccurance(_schoolStart);
+    }
+```
+
+Expreeeion body
+
+更像是一個數學的運算式，把一個domain的資料送到codomain計算後取回
+
+要精簡為expression body有一個約束，**只能包含一個表達式**
+
+但是這樣有括弧來撰寫不是更方便嗎?
+
+實際上，這種約束是在協助實踐**Command-Query Seperation(CQS)**
+
+避免同時可以產出(produce)結果(Query)，又可以執行某些行為(Command)的function
+
+因為往往會因為無法預期有東西會被改變而造成caller困惑
+
+```csharp
+public Date GetBeginning(Child child) =>
+        child.GateDateByAge(minAge)
+            .GetFirstOccurance(cutOff)
+            .GetFirstOccurance(_schoolStart);
+
+```
