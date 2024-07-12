@@ -521,7 +521,7 @@ run  ##Unchanged
 
 #### Summary: Polymophism(多態性)是什麼
 
-一個物件可以以多種樣貌呈現，實作上透過繼承來實現，不透過一些在基底類別的共同屬性，以及衍生類別自己的屬性
+一個物件可以以多種樣貌呈現，實作上透過繼承來實現，透過一些在基底類別的共同屬性，以及衍生類別自己的屬性
 
 來呈現出真實世界裡，相同類別的東西，有點一樣，又有些不一樣的現象
 
@@ -922,3 +922,307 @@ two possible result
 - 在Call Stack上動態管理，儲存了參數、局部變數(local variables)、傳回的地址(return address)
 
 > **每次遞迴都會產生一個Activation frame，並推入call stack，再依照LIFO的特性，逐一回到最開始的傳回位址
+
+## Object Substitution principal (物件可替換性原則)
+
+Origin
+
+```mermaid
+classDiagram
+
+    class Consumer {
+        <fields>
+        <methods>
+    }
+
+    class Bascketball {
+        <fields>
+        rule
+        time
+        <methods>
+        exercise()
+    }
+
+
+    Consumer --> Bascketball
+
+```
+
+新增需求，要再加一個跑步
+
+原本Consumer調用Bascketball class來執行exercise()，現在也要能對Run class執行
+
+將一個物件拿來替代另一個物件，即為Object Substitution principal，可以透過繼承來實現
+
+但Consumer已經reference了Backetball物件，就算新增了Run物件也無法調用
+
+此時新增一個BaseObject **Sport**，提供給Consumer統一調用，再讓Backetball及Run繼承他，此物件即可動態的替換
+
+```Sport sport = new Bascketball();```
+```Sport sport = new Run();```
+
+> 對物件的reference可以被轉換為其derived type，n層以下的derived type皆可，這個行為稱為**Upcast**
+
+```mermaid
+classDiagram
+    class Consumer {
+        <fields>
+        <methods>
+    }
+
+    class Sport {
+        <<abstract>>
+        <fields>
+        time
+        <methods>
+    
+        exercise()
+    }
+
+    class Bascketball {
+        <fields>
+        rule
+        <methods>
+        exercise()
+    }
+
+    class Run {
+        <fields>
+        km
+        <methods>
+        exercise()
+    }
+
+    Sport <|-- Bascketball
+    Sport <|-- Run
+    Consumer --> Sport
+
+```
+
+*Note*: 過度深層的繼承通常被視為一種anti-pattern
+
+1. 脆弱的基底類別問題：當繼承鏈過長時，底層的改變可能會影響到所有衍生的類別
+
+2. 重複代碼：繼承通常用來共享代碼，但過度使用繼承可能導致不必要的重複，尤其是當衍生類別只需要基底類別的部分功能時。
+
+3. 類別爆炸：隨著繼承層次的增加，相應的類別和子類別也可能迅速增加
+
+## Liskov substitution principle (LSP)
+
+>What is wanted here is something like the following substitution property:
+>
+> If for each object o1 of type S there is an object o2 of type T such that for all programs P defined in terms of T, the behavior of P is unchanged when o1 issubstituted for o2 then S is a subtype of T
+>
+> 如果對於每個類型為 S 的物件 o1，都存在一個類型為 T 的物件 o2，使得對於所有以 T 為基礎定義的程式 P，當 o1 替換為 o2 時，P 的行為保持不變，那麼 S 就是 T 的子類型。
+
+程式中使用基底類別的地方都應該能透過子類實體來替代，而不會影響程式的執行結果
+
+### Example of a Violation of LSP
+
+分析LSP是如何以明顯和不明顯的方式被違反的papper，建議閱讀:
+ [The Liskov Substitution Principle](https://web.archive.org/web/20151128004108/http://www.objectmentor.com/resources/articles/lsp.pdf)
+
+- 無法收斂的程式碼更改
+
+因為依賴Run-Time Type Information (RTTI)，導致許多型別的判斷，並且每次新增子類，都會導致要跟著更改，不符合開放封閉原則
+
+```C++
+void DrawShape(const Shape& s)
+{ 
+if (typeid(s) == typeid(Square))
+DrawSquare(static_cast<Square&>(s));
+
+else if (typeid(s) == typeid(Circle))
+DrawCircle(static_cast<Circle&>(s));
+}
+```
+
+- 多餘的記憶體耗用
+實際上Square並不需要同時設定長和寬
+
+```csharp
+public class Rectangle
+{
+    private double _height;
+    private double _width;
+
+    public double Height
+    {
+        get => _height;
+        set => _height = value;
+    }
+
+    public double Width
+    {
+        get => _width;
+        set => _width = value;
+    }
+
+    public override string ToString() => $"width: {_width},  height: {_height}";  
+}
+
+public class Square : Rectangle
+{
+}
+
+internal static class Program
+{
+    public static void Main(string[] args)
+    {
+        Rectangle square = new Square();
+        square.Height = 10;
+        square.Width = 10;
+        Console.WriteLine(square);
+    }
+}
+
+
+```
+
+- 基底類別的方法並沒有適用子類別，使用Virtual的同時，無法說明原本的物件設定的好好的，為什麼子類別加入之後，他就必須要改為virtual
+
+```csharp
+public class Rectangle
+{
+    private double _height;
+    private double _width;
+
+    public virtual double Height
+    {
+        get => _height;
+        set => _height = value;
+    }
+
+    public double Width
+    {
+        get => _width;
+        set => _width = value;
+    }
+
+
+    public override string ToString() => $"width: {_width},  height: {_height}";
+    
+    
+}
+
+public class Square : Rectangle
+{
+    public override double Height
+    {
+        get => base.Height;
+        set
+        {
+            base.Height = value;
+            Width = value;
+        }
+    }
+}
+
+internal static class Program
+{
+    public static void Main(string[] args)
+    {
+        Rectangle square = new Square();
+        square.Height = 10;
+        Console.WriteLine(square);
+    }
+}
+
+```
+
+目前為止看起來透過virtual，可以讓這兩個物件動態互換，並且又維持各自的Setter行為，但是仍存有真正嚴重的問題
+
+- **根據caller的不同視角，可能會產出超出預期的行為**
+
+用Square視角來執行g function，就會出錯
+
+再回頭看看LSP的定義，並換成以下案例
+
+> 類型為 Square 的物件 o1，都存在一個類型為 Rectangle 的物件 o2
+>
+> 以 Rectangle 為基礎定義了程式 g
+
+當 o1 替換為 o2 時，*g的行為應該要保持不變*
+
+結論: 違反LSP
+
+```csharp
+using System;
+using System.Diagnostics;
+
+public class Rectangle
+{
+    public int Width { get; set; }
+    public int Height { get; set; }
+    
+    public virtual void SetWidth(int width)
+    {
+        Width = width;
+    }
+
+    public virtual void SetHeight(int height)
+    {
+        Height = height;
+    }
+
+    public int GetWidth()
+    {
+        return Width;
+    }
+
+    public int GetHeight()
+    {
+        return Height;
+    }
+}
+
+public class Square : Rectangle
+{
+    public override void SetWidth(int width)
+    {
+        Width = width;
+        Height = width; 
+    }
+
+    public override void SetHeight(int height)
+    {
+        Width = height;
+        Height = height; 
+    }
+}
+
+public class Program
+{
+    private static void g(Rectangle r)
+    {
+        r.SetWidth(5);
+        r.SetHeight(4);
+        Debug.Assert(r.GetWidth() * r.GetHeight() == 20, "Assertion failed: Width * Height is not equal to 20.");
+    }
+
+    public static void Main()
+    {
+        Rectangle rect = new Rectangle();
+        Rectangle sqr = new Square();
+        
+        g(rect); // Works fine
+        g(sqr); // Assertion fails because sqr is a Square, not a Rectangle
+    }
+}
+
+```
+
+```> Process terminated. Assertion failed.```
+
+### Summary
+
+不是單獨看Model內部就能有意義的驗證符合LSP，還需要結合用戶端的使用情境
+
+將現實中的"is a"翻譯成電腦裡的"繼承"，可能是太過直觀的
+
+"is a" 除了field，還必續包含行為也一致，並且是指"public behavior"
+
+Square可以是Rectangle(多態)，但Square instance絕對不可能是Rectangle instance
+
+有太多相似但不全然是的情境，如果無法確保基底類別的行為能完全被子類別取代，建議**以組合取代繼承**
+
