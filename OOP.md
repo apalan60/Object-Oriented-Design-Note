@@ -1226,3 +1226,53 @@ Square可以是Rectangle(多態)，但Square instance絕對不可能是Rectangle
 
 有太多相似但不全然是的情境，如果無法確保基底類別的行為能完全被子類別取代，建議**以組合取代繼承**
 
+## 'this' reference
+
+Class **Date**
+
+```csharp
+public class Date(int year,YearDate day)
+{
+    private int _year = year;
+
+    private YearDate _day = day;
+    
+
+private Date FirstValidDate(int year, YearDate day) 
+=>  _day.IsLeap() && !IsLeap(year)
+    ? new Date(year, day.GetNext()) 
+    : new Date(year, day);
+``
+
+private bool IsLeap(int year) => year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+}
+```
+
+Class **YearDate**
+
+```csharp
+public class YearDate(int month, int day)
+{
+    private readonly int _month = month;
+    private readonly int _day = day;
+    public bool IsLeap() => _month == 2 && _day == 29;
+}
+
+```
+
+上述```Date.FirstValidDate()```程式碼在IL Low-level C#裡會被撰寫為
+
+```csharp
+    private Date FirstValidDate(int year, YearDate day)
+    {
+      if (!this._day.IsLeap() || this.IsLeap(year))
+        return new Date(year, day);
+      return new Date(year, day.GetNext());
+    }
+```
+
+1. 第一個```IsLeap()```
+來自當前_day的instance的方法，_day的型別為```YearDate```，所以是YearDate裡公開的function ```YearDate.IsLeap()```
+
+2. 第二個```IsLeap()```
+當前物件實例的 IsLeap()，所以是```Date.IsLeap()```
