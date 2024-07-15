@@ -320,11 +320,21 @@ run
 
 在修正之前，先談談object layout & vTable
 
+> 宣告為virtual的function，編譯時，會建立vtable在該物件建立vtable，裡面有vPointer陣列，其就像function的記憶體位址目錄。
+>
+> runtime執行時，如果是Base class，會先取得藏在物件前4個bytes的vptr，然後藉由vptr訪問vtable，取得function記憶體位置。然後在其function pointer執行
+>
+> 如果為derived class，並且override該function，編譯時也會建立vtable，裡面的vptr指向自己覆寫的function
+>
+>runtime時，則會透過vptr訪問到自己的vtable，裡面有一個指向自己覆寫版本的function
+
 ##### vTable
 
-Vitural method table(虛擬表)，Compiler 會自動為每個物件建立，並且**會被繼承**，是記憶體裡指向function的指標陣列，每個指標為vptr（虛指針）
+Vitural method table(虛擬表)，Compiler 會自動為每個物件建立，並且**會被繼承**，是記憶體裡指向function的指標陣列，每個指標為vptr（vPointer虛指針）
 
 function pointer的概念在電腦發明的初期就已經存在，用於指向某段方法的記憶體位置，並跳過去執行
+
+*Ref:* [How virtual functions works internally using vTable and vPointer?](https://thispointer.com/how-virtual-functions-works-internally-using-vtable-and-vpointer/)
 
 ##### Object layout
 
@@ -1276,3 +1286,19 @@ public class YearDate(int month, int day)
 
 2. 第二個```IsLeap()```
 當前物件實例的 IsLeap()，所以是```Date.IsLeap()```
+
+> this reference 引導Compiler 進到該物件的Vtable
+> Compiler 再根據偏移量找到對應function並將參數傳入
+
+## Dependency Injection
+
+透過依賴其他物件，使可以調用該物件的function來與其合作
+
+透過Constructor注入對其他物件的依賴性，為**Constructor Injection**
+
+## Refactor
+
+重構常常是重新設計Model的前置作業，如何同時兼顧OCP又更改程式碼?
+
+- 更改物件結構，但保留程式碼行為 e.g. 將class A的function k，抽離至新的class B，但k的行為不變
+
